@@ -38,12 +38,13 @@ public:
 		return *(mServiceMap.insert(std::pair<std::string,Service>(service.getName(),service)).first);
 	}
 
-
+	static Server& getInstance(){ return mServer; }
 
 private:
 	Server();
-	Server& getInstance(){ return mServer; }
+
 	void loadServicesIntoMap();
+	void startServices();
 
 	Server mServer;
 	std::map<std::string,Service> mServiceMap;

@@ -55,7 +55,8 @@ public:
 
 	std::vector read();
 
-	void bind(const std::string& port, const std::string& ip = nullptr);
+	void bind(const std::string& port, const std::string& ip);
+	void bind(const std::string& port);
 
 	Socket&& accept();
 

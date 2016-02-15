@@ -21,12 +21,19 @@ public:
 
 	Service& getService() const { return mService; }
 
+	std::list<Connection>::const_iterator&
+	getLocator() const {
+		return mLocator;
+	}
+
+	const Socket& getSocket() const{ return mSocket; }
+
 
 private:
 
 	Socket mSocket;
 	Service& mService;
-	std::vector<unsigned char> mBuffer;
+	std::list<Connection>::const_iterator mLocator;
 
 };
 

@@ -5,10 +5,16 @@
  *      Author: philgras
  */
 
+#include "Server.h"
+
+using namespace Peak;
+
 int main(int n, char** c){
 
 
-	return 0;
+	Server& server = Server::getInstance();
+
+	return server.start();
 
 }
 
