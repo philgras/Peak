@@ -2,7 +2,8 @@ cmake_minimum_required (VERSION 2.6 FATAL_ERROR)
 project (Peak C CXX)
 find_package(Threads)
 
-if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
+if(CMAKE_CXX_COMPILER_ID MATCHES GNU OR
+	CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 	set(CMAKE_CXX_FLAGS "-Wall -Wfatal-errors -pedantic -std=c++11")
 	set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3")
 	set(CMAKE_CXX_FLAGS_RELEASE "-O3")
