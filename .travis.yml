@@ -26,7 +26,7 @@ install:
 script:
   - mkdir _builds
   - cd _builds
-  - cmake ..
+  - cmake -DCMAKE_C_COMPILER=${CC} -DCMAKE_CXX_COMPILER=${CXX} ..
   - make
   - make test
 
