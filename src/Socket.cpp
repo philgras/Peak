@@ -16,6 +16,8 @@
 
 namespace Peak {
 
+const char* Socket::DEFAULT_IP = "0.0.0.0";
+
 void Socket::operator =(Socket&& socket){
 
 	this->mDescriptor 	= socket.mDescriptor;

@@ -11,11 +11,12 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <ctime>
 
 #define LOG_DEBUG(log, msg) 	log.trace(Peak::LogLevel::DEBUG, msg,		\
 									__FILE__, __func__ , __LINE__)
 
-#define LOG_INFO(log, msg) 		log.trace(Peak::LogLevel::INFO, msg,		\
+#define LOG_INFO(log, msg)  	log.trace(Peak::LogLevel::INFO, msg,		\
 									__FILE__, __func__ , __LINE__)
 
 #define LOG_WARNING(log, msg) 	log.trace(Peak::LogLevel::WARNING, msg,		\
@@ -37,7 +38,7 @@ enum class LogLevel{
 		DEBUG
 	};
 
-static const char* LogLevelStrings[]{
+const char* LogLevelStrings[]{
 
 		"FATAL",
 		"ERROR",
@@ -70,16 +71,18 @@ public:
 							const char* function, int line){
 
 		if(level <= mLevel){
-			mLogOutput	<<"["<<LogLevelStrings[level]<<"]"
+			mLogOutput	<<"["<<LogLevelStrings[level]<<"] "
+						<<" Timestamp: "<<time(NULL)
 						<<" Message: "<<msg
 						<<" File: "<<sourceFile
-						<<" Line: "<<line;
+						<<" Line: "<<line<<'\n';
 		}
 
 	}
 
 	void close(){
 		if(mLogOutput.is_open()){
+			mLogOutput.flush();
 			mLogOutput.close();
 		}
 	}

@@ -23,7 +23,7 @@ public:
 	typedef int SocketDescriptor;
 
 	static const SocketDescriptor INVALID_SOCKET {-1};
-	static const char * DEFAULT_IP {"0.0.0.0"};
+	static const char * DEFAULT_IP;
 	static const uint16_t DEFAULT_PORT {0};
 
 	Socket()
