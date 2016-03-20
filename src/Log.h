@@ -28,6 +28,7 @@
 #define LOG_FATAL(log, msg) 	log.trace(Peak::LogLevel::FATAL,msg,		\
 									__FILE__, __func__ , __LINE__)
 
+
 namespace Peak {
 
 enum class LogLevel{
@@ -86,6 +87,7 @@ public:
 			mLogOutput.close();
 		}
 	}
+
 
 private:
 

@@ -11,35 +11,65 @@
 #include "Common.h"
 #include <string>
 #include <vector>
+#include <exception>
+#include <cerrno>
+#include <cstring>
 #include <cstdint>
 #include <unistd.h>
 
+#include <sys/socket.h>
+
 
 namespace Peak {
+
+class SocketException : std::exception{
+
+public:
+	SocketException(const char* errorMsg, const char* file, const char* function, unsigned int line)
+	:mErrorMsg(errorMsg),mFile(file),mFunction(function),mLine(line){
+
+	}
+
+	const char* getErrorMessage() const{
+		return mErrorMsg;
+	}
+
+	const char* getSourceFileName()const{
+		return mFile;
+	}
+
+	const char* getFunctionName()const{
+		return mFunction;
+	}
+
+	unsigned int getLineNumber() const{
+		return mLine;
+	}
+
+private:
+	const char* mErrorMsg;
+	const char* mFile;
+	const char* mFunction;
+	unsigned int mLine;
+
+};
 
 class Socket {
 public:
 
 	typedef int SocketDescriptor;
-
-	static const SocketDescriptor INVALID_SOCKET {-1};
-	static const char * DEFAULT_IP;
-	static const uint16_t DEFAULT_PORT {0};
+	static constexpr SocketDescriptor INVALID_SOCKET {-1};
 
 	Socket()
-	:mDescriptor(INVALID_SOCKET), mIsListening(false),
-	 mIp(DEFAULT_IP),mPort(DEFAULT_PORT){
+	:mDescriptor(INVALID_SOCKET){
 
 	}
 
 	Socket(Socket&& socket)
-	:mDescriptor(socket.mDescriptor), mIsListening(socket.mIsListening),
-	 mIp(socket.mIp),mPort(socket.mPort){
+	:mDescriptor(socket.mDescriptor){
 
 		socket.mDescriptor 	= INVALID_SOCKET;
-		socket.mIsListening = false;
-		socket.mIp 			= DEFAULT_IP;
-		socket.mPort 		= DEFAULT_PORT;
+
 
 	}
 
@@ -49,41 +79,76 @@ public:
 
 	void operator=(Socket&&);
 
-	void enableNonBlocking();
+	/**
+	 * sets the flag NON_BLOCKING of the socket descriptor
+	 * @throws SocketException, if an error occurs
+	 */
+	void enableNonBlockingMode();
 
-	void write(const std::vector&);
+	/**
+	 * connects to an IP or hostname
+	 * @param host - hostname or IPv4 , IPv6
+	 * @param service - port or protocol
+	 * @param throws SocketException, if an network error occurs or the host cannot be reached
+	 */
+	void connect(const std::string& host, const std::string& service);
 
-	std::vector read();
+	/**
+	 * binds to an IP or hostname
+	 * @param host - hostname or IPv4 , IPv6
+	 * @param service - port or protocol
+	 * @throws SocketException, if an network error occurs
+	 */
+	void bind(const std::string& host, const std::string& service);
 
-	void bind(const std::string& port, const std::string& ip);
-	void bind(const std::string& port);
+	/**
+	 * listens on the socket descriptor to accept incoming connection
+	 * @param backlog - number of connections that will be stored if not accepted immediately
+	 * @throws SocketException, if an network error occurs or the host cannot be reached
+	 */
+	void listen(int backlog){
+		if(::listen(mDescriptor,backlog) == -1){
+			THROW_EXCEPTION(SocketException, strerror(errno));
+		}
+	}
 
-	Socket&& accept();
+	/**
+	 * Use this only in non-blocking mode!!!
+	 * accepts all available connections
+	 * @returns accepted sockets
+	 * @throws SocketException, if an network error occurs
+	 */
+	std::vector<Socket> acceptAll();
 
-	void listen();
+	/**
+	 * Rather use this in blocking mode
+	 * @returns the accepted socket
+	 * @throws SocketException, if an network error occurs
+	 */
+	Socket acceptSingle();
 
-	void close();
+	void send(const Buffer&);
 
-	std::uint16_t getPort() const { return mPort; }
+	void receive(Buffer&);
 
-	const std::string& getIp() const { return mIp; }
-
-	SocketDescriptor getSocketDescriptor() { return mDescriptor; }
-
-	bool isListening() const { return mIsListening; }
+	void close(){
+		if(mDescriptor != INVALID_SOCKET){
+			::close(mDescriptor);
+			mDescriptor = INVALID_SOCKET;
+		}
+	}
 
 	DISALLOW_COPY_AND_ASSIGN(Socket);
 
 private:
 
-	static void closeSocketDescriptor(SocketDescriptor socket){
-		::close(socket);
+	explicit Socket(SocketDescriptor descriptor)
+	:mDescriptor(descriptor){
+
 	}
 
 	SocketDescriptor mDescriptor;
-	bool mIsListening;
-	std::string mIp;
-	std::uint16_t mPort;
+
 
 };
 

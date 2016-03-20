@@ -8,7 +8,8 @@
 #ifndef SRC_URL_H_
 #define SRC_URL_H_
 
-#include "Buffer.h"
+#include <iterator>
+#include <type_traits>
 #include <map>
 #include <string>
 
@@ -19,22 +20,46 @@ class Url{
 
 public:
 
-	typedef std::pair<std::multimap<std::string,std::string>::const_iterator,
-					  std::multimap<std::string,std::string>::const_iterator> range;
+	typedef std::multimap<std::string,std::string> ParameterMap;
+    typedef std::pair<ParameterMap::const_iterator,ParameterMap::const_iterator> ParameterRange;
+
 
 	Url():mParameters(),mPath(){}
 	~Url(){}
 
 	/**
-	 * @returns Boolean value that indicates if the url data is valid.
-	 * 			If it is not the Url object can be reused for another call.
+	 *
 	 */
-	void parse(Buffer::const_iterator begin, Buffer::const_iterator end);
+	void parse(const std::string& str){
+		parseInternal(&(*str.begin()), &(*str.end()));
+	}
 
-	const range getParameterValues(const std::string& parameter)const{
+	/**
+	 *
+	 */
+	void parse(const std::vector<char>& vec){
+		parseInternal(&(*vec.begin()), &(*vec.end()));
+
+	}
+
+	/**
+	 *
+	 * @param  parameter - string reference that represents the name of the parameter
+	 * @returns Pair of constant map iterators to parameter name and parameter value.
+	 * 		   Pair.first is equivalent to begin and Pair.second to end.
+	 */
+	const ParameterRange getParameterValues(const std::string& parameter)const{
 		return mParameters.equal_range(parameter);
 	}
 
+	/**
+	 *
+	 * @param  parameter - string reference that represents the name of the parameter
+	 * @returns A string pointer to the value of the parameter will be returned.
+	 * 		   If no parameter has the given name, nullptr is the returned value.
+	 * 		   Hence, make sure you check for nullptr value!
+	 * 		   If the parameter has more than one value, it is undefined which value will be returned.
+	 */
 	const std::string* getParameterValue(const std::string& parameter)const{
 		auto iter = mParameters.find(parameter);
 		if(iter == mParameters.end()){
@@ -44,10 +69,14 @@ public:
 		}
 	}
 
+	/**
+	 * @returns URL path as string
+	 */
 	const std::string& getPath()const { return mPath; }
 
 
 private:
+	void parseInternal(const char* begin, const char* end);
 	std::multimap<std::string,std::string> mParameters;
 	std::string mPath;
 };

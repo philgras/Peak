@@ -13,5 +13,7 @@
 		class_name(const class_name&) = delete; 			\
 		class_name& operator=(const class_name&) = delete
 
+#define THROW_EXCEPTION(class_name,msg)	\
+		throw class_name((msg),__FILE__, __func__ , __LINE__)
 
 #endif /* SRC_COMMON_H_ */

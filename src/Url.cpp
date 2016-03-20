@@ -11,12 +11,14 @@
 namespace Peak {
 
 
-void Url::parse(Buffer::const_iterator begin, Buffer::const_iterator end){
 
-	Buffer::const_iterator iter = begin;
+void Url::parseInternal(const char* begin, const char* end){
+
+	const char* iter = begin;
 	std::string parameter , value;
-
 	bool parsingParameter = true;
+
+	mParameters.clear();
 
 	for(;*iter != '?' && iter != end; ++iter);
 
@@ -24,7 +26,7 @@ void Url::parse(Buffer::const_iterator begin, Buffer::const_iterator end){
 
 	if(iter != end){
 
-		Buffer::const_iterator firstLetter = ++iter;
+		const char* firstLetter = ++iter;
 		for(;iter != end; ++iter){
 			if(parsingParameter){
 				if(*iter == '='){

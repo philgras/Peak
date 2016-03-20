@@ -6,96 +6,160 @@
  */
 
 #include "Socket.h"
+#include "AddressLookup.h"
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netdb.h>
 #include <fcntl.h>
-#include <system_error>
-#include <cerrno>
-#include <cstring>
+
+
 
 namespace Peak {
 
-const char* Socket::DEFAULT_IP = "0.0.0.0";
 
 void Socket::operator =(Socket&& socket){
 
 	this->mDescriptor 	= socket.mDescriptor;
-	this->mIsListening 	= socket.mIsListening;
-	this->mIp 			= socket.mIp;
-	this->mPort 		= socket.mPort;
-
 	socket.mDescriptor 	= INVALID_SOCKET;
-	socket.mIsListening = false;
-	socket.mIp 			= DEFAULT_IP;
-	socket.mPort 		= DEFAULT_PORT;
 
 }
 
-void Socket::bind(const std::string& port, const std::string& ip ){
+void Socket::connect(const std::string& host, const std::string& service){
+	AddressLookup addressLookup;
+	struct addrinfo* addressInfo = nullptr;
+	int yes = 1;
+	int errorCode;
 
-	struct addrinfo * res = NULL;
-	struct addrinfo hints;
-	int yes = 1; //used in the setsockopt()-call
-	int rc; //used to get gai_strerror
-	SocketDescriptor sfd = INVALID_SOCKET;
+	addressLookup.lookup(host.c_str(),service.c_str(),
+							AF_UNSPEC, SOCK_STREAM, 0);
 
-	std::memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_INET;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags = AI_PASSIVE;
+	while((addressInfo = addressLookup.getNextResult())!= nullptr){
 
-	if ((rc = ::getaddrinfo(ip? ip.c_str() : NULL , port.c_str(), &hints, &res)) != 0) {
-		throw std::system_error(std::error_code(), gai_strerror(rc));
+		mDescriptor = socket(addressInfo->ai_family, addressInfo->ai_socktype, addressInfo->ai_protocol);
+		if (mDescriptor == INVALID_SOCKET) {
+
+			errorCode = errno;
+			//TODO: log
+
+			continue;
+		}
+
+
+		if (::connect(mDescriptor, addressInfo->ai_addr, addressInfo->ai_addrlen) == -1) {
+			errorCode = errno;
+			//TODO: log
+
+			this->close();
+			continue;
+
+		}
 	}
 
-	/*don't return before releasing the allocated resources*/
+	//if the socket could not connect to any address throw an exception
+	if(mDescriptor == INVALID_SOCKET){
+		THROW_EXCEPTION(SocketException,strerror(errorCode));
+	}
+}
 
-	for (struct addrinfo* iter = res; iter != NULL; iter = iter->ai_next) {
 
+void Socket::bind(const std::string& host, const std::string& service ){
+
+	AddressLookup addressLookup;
+	struct addrinfo* addressInfo = nullptr;
+	int yes = 1;
+	int errorCode;
+
+	addressLookup.lookup(host.c_str(),service.c_str(),
+							AF_INET,SOCK_STREAM,AI_PASSIVE);
+
+	while((addressInfo = addressLookup.getNextResult())!= nullptr){
 		//get the descriptor
-		sfd = socket(iter->ai_family, iter->ai_socktype, iter->ai_protocol);
-		if (sfd == INVALID_SOCKET) {
-			//log
+		mDescriptor = socket(addressInfo->ai_family, addressInfo->ai_socktype, addressInfo->ai_protocol);
+		if (mDescriptor == INVALID_SOCKET) {
+			errorCode = errno;
+
+			//TODO: log
+
 			continue;
 		}
 
 		//setsockopt
-		if (setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes))
-				== -1) {
-			//log
-			Socket::closeSocketDescriptor(sfd);
-			sfd = INVALID_SOCKET;
-			break;
+		if (::setsockopt(mDescriptor, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes))	== -1) {
+			errorCode = errno;
+			this->close();
+			THROW_EXCEPTION(SocketException,strerror(errno));
 		}
 
 		//bind it
-		if (::bind(sfd, iter->ai_addr, iter->ai_addrlen) == -1) {
-			//log
-			Socket::closeSocketDescriptor(sfd);
-			sfd = INVALID_SOCKET;
+		if (::bind(mDescriptor, addressInfo->ai_addr, addressInfo->ai_addrlen) == -1) {
+			errorCode = errno;
+
+			//TODO: log
+
+			this->close();
 			continue;
 		}
 	}
 
-	freeaddrinfo(res);
+	//if the socket could not be bind to any address throw an exception
+	if(mDescriptor == INVALID_SOCKET){
+		THROW_EXCEPTION(SocketException,strerror(errorCode));
+	}
+
 }
 
 
-void Socket::enableNonBlocking(){
+void Socket::enableNonBlockingMode(){
 
 	int flags;
 
 	flags = fcntl(mDescriptor, F_GETFL, 0);
 	if (flags == -1) {
-		throw std::system_error(errno, std::system_category());
+		THROW_EXCEPTION(SocketException,strerror(errno));
 	}
 
 	flags |= O_NONBLOCK;
 	if (fcntl(mDescriptor, F_SETFL, flags) == -1) {
-		throw std::system_error(errno, std::system_category());
-
+		THROW_EXCEPTION(SocketException,strerror(errno));
 	}
+}
+
+
+std::vector<Socket> Socket::acceptAll(){
+	std::vector<Socket> acceptedSockets;
+	int descriptor;
+
+	while(true){
+		if((descriptor = ::accept(mDescriptor,NULL,NULL)) == INVALID_SOCKET){
+			if(errno == EAGAIN || errno == EWOULDBLOCK){
+				break;
+			}else{
+				THROW_EXCEPTION(SocketException,strerror(errno));
+			}
+		}else{
+			acceptedSockets.push_back(Socket(descriptor));
+		}
+	}
+	return acceptedSockets;
+}
+
+
+Socket Socket::acceptSingle(){
+	int descriptor;
+	if((descriptor = ::accept(mDescriptor,NULL,NULL)) == INVALID_SOCKET){
+		THROW_EXCEPTION(SocketException,strerror(errno));
+	}
+	return Socket(descriptor);
+}
+
+void send(const Buffer& buf){
+
+
+}
+
+void receive(Buffer& buf){
+
+
 }
 
 } /* namespace Peak */
