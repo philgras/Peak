@@ -35,26 +35,25 @@ public:
 	 * @param aiFamily - address family AF_INET AF_INET6 or AF_UNSPEC
 	 * @param sockType - SOCK_STREAM or SOCK_DGRAM
 	 * @param aiFlags - flags or 0
-	 * @throws system-error
-	 * TODO: find a more appropriate exception class
+	 * @throws NetworkException if no proper addrinfo could be found
 	 */
 	void lookup(const char* host, const char* service, int aiFamily, int sockType, int aiFlags);
 
 	/**
 	 * @returns the next addrinfo in the result list or nullptr
 	 */
-	const struct addrinfo* getNextResult() const;
+	const struct addrinfo* getNextResult();
 
 private:
 
 	void freeResultList(){
 		if( mResultList!= nullptr ){
-			freeaddrinfo(mResultList);
+			::freeaddrinfo(mResultList);
 			mResultList = nullptr;
 		}
 	}
 
-	struct addrinfo * mResultList;
+	struct addrinfo* mResultList;
 	struct addrinfo* mIter;
 
 };

@@ -9,9 +9,10 @@
 #define SRC_SOCKET_H_
 
 #include "Common.h"
+#include "NetworkException.h"
+#include "Buffer.h"
 #include <string>
 #include <vector>
-#include <exception>
 #include <cerrno>
 #include <cstring>
 #include <cstdint>
@@ -22,54 +23,29 @@
 
 namespace Peak {
 
-class SocketException : std::exception{
-
-public:
-	SocketException(const char* errorMsg, const char* file, const char* function, unsigned int line)
-	:mErrorMsg(errorMsg),mFile(file),mFunction(function),mLine(line){
-
-	}
-
-	const char* getErrorMessage() const{
-		return mErrorMsg;
-	}
-
-	const char* getSourceFileName()const{
-		return mFile;
-	}
-
-	const char* getFunctionName()const{
-		return mFunction;
-	}
-
-	unsigned int getLineNumber() const{
-		return mLine;
-	}
-
-private:
-	const char* mErrorMsg;
-	const char* mFile;
-	const char* mFunction;
-	unsigned int mLine;
-
-};
-
 class Socket {
 public:
 
 	typedef int SocketDescriptor;
-	static constexpr SocketDescriptor INVALID_SOCKET {-1};
+	static constexpr SocketDescriptor INVALID_SOCKET = -1;
+	static constexpr size_t BUFFER_SIZE = 8192;
+
+	enum TrafficStatus{
+	  NOT_SET,
+	  SEND_WAIT,
+	  RECV_WAIT,
+	  CLOSED_BY_PEER
+	};
 
 	Socket()
-	:mDescriptor(INVALID_SOCKET){
+	:mDescriptor(INVALID_SOCKET),mStatus(NOT_SET){
 
 	}
 
 	Socket(Socket&& socket)
-	:mDescriptor(socket.mDescriptor){
+	:mDescriptor(socket.mDescriptor),mStatus(socket.mStatus){
 
 		socket.mDescriptor 	= INVALID_SOCKET;
-
 
 	}
 
@@ -81,7 +57,7 @@ public:
 
 	/**
 	 * sets the flag NON_BLOCKING of the socket descriptor
-	 * @throws SocketException, if an error occurs
+	 * @throws NetworkException, if an error occurs
 	 */
 	void enableNonBlockingMode();
 
@@ -89,7 +65,7 @@ public:
 	 * connects to an IP or hostname
 	 * @param host - hostname or IPv4 , IPv6
 	 * @param service - port or protocol
-	 * @param throws SocketException, if an network error occurs or the host cannot be reached
+	 * @param throws NetworkException, if an network error occurs or the host cannot be reached
 	 */
 	void connect(const std::string& host, const std::string& service);
 
@@ -97,18 +73,18 @@ public:
 	 * binds to an IP or hostname
 	 * @param host - hostname or IPv4 , IPv6
 	 * @param service - port or protocol
-	 * @throws SocketException, if an network error occurs
+	 * @throws NetworkException, if an network error occurs
 	 */
 	void bind(const std::string& host, const std::string& service);
 
 	/**
 	 * listens on the socket descriptor to accept incoming connection
 	 * @param backlog - number of connections that will be stored if not accepted immediately
-	 * @throws SocketException, if an network error occurs or the host cannot be reached
+	 * @throws NetworkException, if an network error occurs or the host cannot be reached
 	 */
 	void listen(int backlog){
 		if(::listen(mDescriptor,backlog) == -1){
-			THROW_EXCEPTION(SocketException, strerror(errno));
+			THROW_EXCEPTION(NetworkException, strerror(errno));
 		}
 	}
 
@@ -116,18 +92,18 @@ public:
 	 * Use this only in non-blocking mode!!!
 	 * accepts all available connections
 	 * @returns accepted sockets
-	 * @throws SocketException, if an network error occurs
+	 * @throws NetworkException, if an network error occurs
 	 */
 	std::vector<Socket> acceptAll();
 
 	/**
 	 * Rather use this in blocking mode
 	 * @returns the accepted socket
-	 * @throws SocketException, if an network error occurs
+	 * @throws NetworkException, if an network error occurs
 	 */
 	Socket acceptSingle();
 
-	void send(const Buffer&);
+	void send(Buffer&);
 
 	void receive(Buffer&);
 
@@ -138,17 +114,26 @@ public:
 		}
 	}
 
+
+	SocketDescriptor getSocketDescriptor() const{
+	    return mDescriptor;
+	}
+
+	TrafficStatus getTrafficStatus()const{
+	    return mStatus;
+	}
+
 	DISALLOW_COPY_AND_ASSIGN(Socket);
 
 private:
 
 	explicit Socket(SocketDescriptor descriptor)
-	:mDescriptor(descriptor){
+	:mDescriptor(descriptor),mStatus(NOT_SET){
 
 	}
 
 	SocketDescriptor mDescriptor;
-
+	TrafficStatus mStatus;
 
 };
 

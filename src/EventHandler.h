@@ -8,13 +8,14 @@
 #ifndef SRC_EVENTHANDLER_H_
 #define SRC_EVENTHANDLER_H_
 
+
 namespace Peak {
 
-class EventHandler {
-public:
-	EventHandler();
-	~EventHandler();
+class EventHandler{
+
+
 };
+
 
 } /* namespace Peak */
 

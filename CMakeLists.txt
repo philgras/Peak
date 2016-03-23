@@ -18,6 +18,9 @@ set(CMAKE_BINARY_DIR "bin")
 enable_testing()
 
 add_library(url src/Url.cpp)
+add_library(buffer src/Buffer.cpp)
+add_library(socket src/Socket.cpp)
+add_library(addressLookup src/AddressLookup.cpp)
 
 
 set(GTEST_ROOT libs/googletest CACHE STRING "Path to the google test/mock framework.")
@@ -30,10 +33,11 @@ include_directories(SYSTEM ${GTEST_ROOT}/googletest/include
 
 add_executable(PeakTestsMain 
                test/PeakTestsMain.cpp
-               test/UrlUnitTest.cpp)
+               test/UrlUnitTest.cpp
+               test/BufferUnitTest.cpp)
 
 target_link_libraries(PeakTestsMain gmock gmock_main gtest gtest_main)
-target_link_libraries(PeakTestsMain url)
+target_link_libraries(PeakTestsMain url buffer)
 
 #add_executable(Peak src/Peak.cpp)
 

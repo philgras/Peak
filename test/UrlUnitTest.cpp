@@ -12,24 +12,13 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <iostream>
 
-/**
- * the URL class changed --> adjust the test cases
- */
-
-TEST(UrlUnitTest, differentInputTypes){
-
-	const char urlCStr[] = "/test/path/to/nothing3?para1=val1&para2=val2&para1=val2";
-	const std::string urlStr(urlCStr);
-	const std::vector<const char> urlVec(std::begin(urlCStr),std::begin(urlCStr));
-
-
-}
 
 
 TEST(UrlUnitTest, parsingNormalUrl){
 
-	const char urlNormal[] = "/test/path/to/nothing3?para1=val1&para2=val2&para1=val2";
+    const std::string urlNormal = "/test/path/to/nothing3?para1=val1&para2=val2&para1=val2";
 
 	/*
 	 * Expected parsing results:
@@ -55,7 +44,7 @@ TEST(UrlUnitTest, parsingNormalUrl){
 
 	//************check urlNormal*****************
 
-	url.parse(std::begin(urlNormal),std::end(urlNormal));
+	url.parse(urlNormal);
 
 	//check getPath
 
@@ -63,29 +52,35 @@ TEST(UrlUnitTest, parsingNormalUrl){
 
 	//check getParameterValue
 
-	EXPECT_EQ(Peak::Url::EMPTY_VALUE,url.getParameterValue(random));
-	EXPECT_TRUE(valueNormal1 == url.getParameterValue(paraNormal1) ||
-				valueNormal2 == url.getParameterValue(paraNormal1));
-	EXPECT_EQ(valueNormal2, url.getParameterValue(paraNormal2));
+	EXPECT_EQ(nullptr,url.getParameterValue(random));
+
+	single_value = url.getParameterValue(paraNormal1);
+	EXPECT_TRUE(valueNormal1 == *single_value ||
+				valueNormal2 == *single_value);
+	EXPECT_EQ(valueNormal2, *url.getParameterValue(paraNormal2));
 
 	//check getParameterValues
 
 	multiple_values = url.getParameterValues(paraNormal1);
+
+	/**
+	 * horrible interface
+	 * TODO: need redesign
+	 */
 	auto begin = multiple_values.first;
-	EXPECT_TRUE(begin->first == valueNormal1 || begin->first == valueNormal2 );
+	EXPECT_TRUE(begin->second == valueNormal1 || begin->second == valueNormal2);
 	++begin;
-	EXPECT_TRUE(begin->first == valueNormal1 || begin->first == valueNormal2 );
+	EXPECT_TRUE(((begin->second == valueNormal1) || (begin->second == valueNormal2) ));
 	++begin;
 	EXPECT_EQ(begin, multiple_values.second);
 
-	//check getAllParameterValues
-
 	EXPECT_EQ(url.getAllParameterValues().size(),3);
+
 }
 
 TEST(UrlUnitTest, parsingStrangeUrl){
 
-	const char urlStrange[] = "/test/path/to/nothing3?para1=val1=val2==val3&=&&para3=&==&";
+	const std::string urlStrange = "/test/path/to/nothing3?para1=val1=val2==val3&=&&para3=&==&";
 
 	/*
 	 * Expected parsing results:
@@ -114,7 +109,7 @@ TEST(UrlUnitTest, parsingStrangeUrl){
 
 	//************check urlStrange****************
 
-	url.parse(std::begin(urlStrange),std::end(urlStrange));
+	url.parse(urlStrange);
 
 	//check getPath
 
@@ -122,16 +117,16 @@ TEST(UrlUnitTest, parsingStrangeUrl){
 
 	//check getParameterValue
 
-	EXPECT_EQ(Peak::Url::EMPTY_VALUE,url.getParameterValue(random));
-	EXPECT_EQ(valueStrange1, url.getParameterValue(paraStrange1));
+	EXPECT_EQ(nullptr,url.getParameterValue(random));
+	EXPECT_EQ(valueStrange1, *url.getParameterValue(paraStrange1));
 
 	//check getParameterValues
 
 	multiple_values = url.getParameterValues(paraStrange2);
 	auto begin = multiple_values.first;
-	EXPECT_TRUE(begin->first == valueStrange2 || begin->first == valueStrange3 );
+	EXPECT_TRUE(begin->second == valueStrange2 || begin->second == valueStrange3 );
 	++begin;
-	EXPECT_TRUE(begin->first == valueStrange2 || begin->first == valueStrange3 );
+	EXPECT_TRUE(begin->second == valueStrange2 || begin->second == valueStrange3 );
 	++begin;
 	EXPECT_EQ(begin, multiple_values.second);
 

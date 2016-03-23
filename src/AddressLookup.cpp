@@ -6,6 +6,8 @@
  */
 
 #include "AddressLookup.h"
+#include "Common.h"
+#include "NetworkException.h"
 #include <cstring>
 
 namespace Peak {
@@ -26,13 +28,14 @@ void AddressLookup::lookup(const char* host, const char* service, int aiFamily, 
 		mResultList = nullptr;
 		mIter = nullptr;
 
-		//change exception type
-		throw std::system_error(std::error_code(), gai_strerror(rc));
+		THROW_EXCEPTION(NetworkException, gai_strerror(rc));
 	}
+
+	mIter = mResultList;
 
 }
 
-const struct addrinfo* AddressLookup::getNextResult() const{
+const struct addrinfo* AddressLookup::getNextResult(){
 
 	struct addrinfo* next = nullptr;
 

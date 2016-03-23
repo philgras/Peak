@@ -38,9 +38,7 @@ void Url::parseInternal(const char* begin, const char* end){
 				if(*iter == '&'){
 					value.assign(firstLetter, iter);
 
-					mParameters.insert(
-							std::make_pair(std::move(parameter),
-									std::move(value)));
+					mParameters.insert(std::make_pair(std::move(parameter),std::move(value)));
 
 					parsingParameter = true;
 					firstLetter = iter + 1;
@@ -50,8 +48,7 @@ void Url::parseInternal(const char* begin, const char* end){
 
 		if (!parsingParameter) {
 			value.assign(firstLetter, iter);
-			mParameters.insert(
-					std::make_pair(std::move(parameter), std::move(value)));
+			mParameters.insert(std::make_pair(std::move(parameter), std::move(value)));
 		}
 
 	}

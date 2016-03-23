@@ -10,12 +10,15 @@
 
 #include <iterator>
 #include <type_traits>
+#include <vector>
 #include <map>
 #include <string>
 
 namespace Peak {
 
-
+/*
+ * TODO: simplify the interface --> no ranges
+ */
 class Url{
 
 public:
@@ -26,6 +29,11 @@ public:
 
 	Url():mParameters(),mPath(){}
 	~Url(){}
+
+
+	/*
+	 * TODO: implement a template function for InputIterator traits
+	 */
 
 	/**
 	 *
@@ -41,6 +49,8 @@ public:
 		parseInternal(&(*vec.begin()), &(*vec.end()));
 
 	}
+
+
 
 	/**
 	 *
@@ -74,10 +84,14 @@ public:
 	 */
 	const std::string& getPath()const { return mPath; }
 
+	const ParameterMap getAllParameterValues()const{
+	        return mParameters;
+	}
+
 
 private:
 	void parseInternal(const char* begin, const char* end);
-	std::multimap<std::string,std::string> mParameters;
+	ParameterMap mParameters;
 	std::string mPath;
 };
 
