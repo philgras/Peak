@@ -35,7 +35,6 @@ Buffer::iterator Buffer::prepareStorage(size_t bytes){
 
        size_t dataSize = getCapacityUsed();
 
-       //just remove this as fast as possible because it is killing performance unnecessarily
        mBuffer.resize(dataSize + bytes);
 
        mReadingPosition = mBuffer.cbegin();

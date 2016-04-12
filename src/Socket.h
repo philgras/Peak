@@ -8,6 +8,7 @@
 #ifndef SRC_SOCKET_H_
 #define SRC_SOCKET_H_
 
+#include "FileDescriptor.h"
 #include "Common.h"
 #include "NetworkException.h"
 #include "Buffer.h"
@@ -23,11 +24,9 @@
 
 namespace Peak {
 
-class Socket {
+class Socket : public FileDescriptor{
 public:
 
-	typedef int SocketDescriptor;
-	static constexpr SocketDescriptor INVALID_SOCKET = -1;
 	static constexpr size_t BUFFER_SIZE = 8192;
 
 	enum TrafficStatus{
@@ -38,22 +37,17 @@ public:
 	};
 
 	Socket()
-	:mDescriptor(INVALID_SOCKET),mStatus(NOT_SET){
-
-	}
+	:FileDescriptor(),mStatus(NOT_SET){}
 
 	Socket(Socket&& socket)
-	:mDescriptor(socket.mDescriptor),mStatus(socket.mStatus){
+	:FileDescriptor(std::move(socket)),mStatus(socket.mStatus){}
 
-		socket.mDescriptor 	= INVALID_SOCKET;
+	virtual~Socket(){}
 
+	void operator=(Socket&& socket){
+		FileDescriptor::operator =(std::move(socket));
+		mStatus = socket.mStatus;
 	}
-
-	~Socket(){
-		close();
-	}
-
-	void operator=(Socket&&);
 
 	/**
 	 * sets the flag NON_BLOCKING of the socket descriptor
@@ -107,18 +101,6 @@ public:
 
 	void receive(Buffer&);
 
-	void close(){
-		if(mDescriptor != INVALID_SOCKET){
-			::close(mDescriptor);
-			mDescriptor = INVALID_SOCKET;
-		}
-	}
-
-
-	SocketDescriptor getSocketDescriptor() const{
-	    return mDescriptor;
-	}
-
 	TrafficStatus getTrafficStatus()const{
 	    return mStatus;
 	}
@@ -127,12 +109,11 @@ public:
 
 private:
 
-	explicit Socket(SocketDescriptor descriptor)
-	:mDescriptor(descriptor),mStatus(NOT_SET){
-
+	explicit Socket(Descriptor descriptor)
+	:FileDescriptor(),mStatus(NOT_SET){
+		mDescriptor = descriptor;
 	}
 
-	SocketDescriptor mDescriptor;
 	TrafficStatus mStatus;
 
 };

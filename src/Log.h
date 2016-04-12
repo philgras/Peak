@@ -11,6 +11,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <mutex>
 #include <ctime>
 
 #define LOG_DEBUG(log, msg) 	log.trace(Peak::LogLevel::DEBUG, msg,		\
@@ -32,18 +33,18 @@
 namespace Peak {
 
 enum class LogLevel{
-		FATAL,
-		ERROR,
-		WARNING,
-		INFO,
-		DEBUG
+		FATAL = 0,
+		ERROR = 1,
+		WARNING = 2,
+		INFO = 3,
+		DEBUG = 4
 	};
 
-const char* LogLevelStrings[]{
+const char *const LogLevelStrings[] = {
 
 		"FATAL",
 		"ERROR",
-		"WARNINGS",
+		"WARNING",
 		"INFO",
 		"DEBUG"
 };
@@ -52,7 +53,7 @@ class Log {
 public:
 
 	Log(const std::string& fileName, LogLevel level = LogLevel::DEBUG)
-	:mLevel(level),mFileName(fileName),mLogOutput(fileName){
+	:mLevel(level),mFileName(fileName),mLogOutput(fileName),mLogMutex(){
 
 	}
 
@@ -72,13 +73,22 @@ public:
 							const char* function, int line){
 
 		if(level <= mLevel){
-			mLogOutput	<<"["<<LogLevelStrings[level]<<"] "
+			std::lock_guard<std::mutex> guard(mLogMutex);
+
+			std::cout	<<"["<<LogLevelStrings[static_cast<int>(level)]<<"] "
 						<<" Timestamp: "<<time(NULL)
-						<<" Message: "<<msg
 						<<" File: "<<sourceFile
-						<<" Line: "<<line<<'\n';
+						<<" Line: "<<line
+						<<" Message: "<<msg<<'\n';
+			mLogOutput.flush();
 		}
 
+	}
+
+
+	void trace(LogLevel level, const std::string& msg, const char* sourceFile,
+			const char* function, int line){
+		trace(level,msg.c_str(),sourceFile,function,line);
 	}
 
 	void close(){
@@ -94,6 +104,7 @@ private:
 	LogLevel mLevel;
 	std::string mFileName;
 	std::ofstream mLogOutput;
+	std::mutex mLogMutex;
 
 };
 

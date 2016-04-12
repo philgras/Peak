@@ -8,33 +8,45 @@
 #ifndef SRC_CONNECTION_H_
 #define SRC_CONNECTION_H_
 
+#include "Observable.h"
+#include "Common.h"
 #include "Socket.h"
 
 namespace Peak {
 
 class Service;
 
-class Connection {
+class Connection : public Observable{
 public:
-	Connection();
-	~Connection();
+	Connection(Socket&& socket, Service& service)
+	:Observable(),mSocket(std::move(socket)),mService(service),mBuffer(){
 
-	Service& getService() const { return mService; }
-
-	std::list<Connection>::const_iterator&
-	getLocator() const {
-		return mLocator;
 	}
 
-	const Socket& getSocket() const{ return mSocket; }
+	Connection(Connection&& c)
+	:Observable(),mSocket(std::move(c.mSocket)),mService(c.mService),mBuffer(std::move(c.mBuffer)){}
 
+	virtual ~Connection() = default;
+	virtual void handleEvents(int eventTypes) final;
+
+	virtual FileDescriptor& getFileDescriptor() {return mSocket;}
+
+	virtual int getEventTypes() {
+		return Observable::EVENT_IN | Observable::EVENT_OUT |
+			   Observable::EVENT_PEER_CLOSED | Observable::EVENT_EDGE_TRIGGERED;
+	}
+
+	const Service& getService() const { return mService; }
+
+protected:
+
+	virtual void receiveMessage() = 0;
+	virtual void sendMessage() = 0;
 
 private:
-
 	Socket mSocket;
 	Service& mService;
-	std::list<Connection>::const_iterator mLocator;
-
+	Buffer mBuffer;
 };
 
 } /* namespace Peak */

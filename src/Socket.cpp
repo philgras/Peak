@@ -17,14 +17,9 @@
 namespace Peak {
 
 
-void Socket::operator =(Socket&& socket){
-
-	this->mDescriptor 	= socket.mDescriptor;
-	socket.mDescriptor 	= INVALID_SOCKET;
-
-}
 
 void Socket::connect(const std::string& host, const std::string& service){
+
 	AddressLookup addressLookup;
 	const struct addrinfo* addressInfo = nullptr;
 	int errorCode;
@@ -35,7 +30,7 @@ void Socket::connect(const std::string& host, const std::string& service){
 	while((addressInfo = addressLookup.getNextResult())!= nullptr){
 
 		mDescriptor = socket(addressInfo->ai_family, addressInfo->ai_socktype, addressInfo->ai_protocol);
-		if (mDescriptor == INVALID_SOCKET) {
+		if (mDescriptor == INVALID_DESCRIPTOR) {
 
 			errorCode = errno;
 			//TODO: log
@@ -55,7 +50,7 @@ void Socket::connect(const std::string& host, const std::string& service){
 	}
 
 	//if the socket could not connect to any address throw an exception
-	if(mDescriptor == INVALID_SOCKET){
+	if(mDescriptor == INVALID_DESCRIPTOR){
 		THROW_EXCEPTION(NetworkException,strerror(errorCode));
 	}
 }
@@ -74,7 +69,7 @@ void Socket::bind(const std::string& host, const std::string& service ){
 	while((addressInfo = addressLookup.getNextResult())!= nullptr){
 		//get the descriptor
 		mDescriptor = socket(addressInfo->ai_family, addressInfo->ai_socktype, addressInfo->ai_protocol);
-		if (mDescriptor == INVALID_SOCKET) {
+		if (mDescriptor == INVALID_DESCRIPTOR) {
 			errorCode = errno;
 
 			//TODO: log
@@ -101,7 +96,7 @@ void Socket::bind(const std::string& host, const std::string& service ){
 	}
 
 	//if the socket could not be bind to any address throw an exception
-	if(mDescriptor == INVALID_SOCKET){
+	if(mDescriptor == INVALID_DESCRIPTOR){
 		THROW_EXCEPTION(NetworkException,strerror(errorCode));
 	}
 
@@ -131,7 +126,7 @@ std::vector<Socket> Socket::acceptAll(){
 	int descriptor;
 
 	while(true){
-		if((descriptor = ::accept(mDescriptor,NULL,NULL)) == INVALID_SOCKET){
+		if((descriptor = ::accept(mDescriptor,NULL,NULL)) == INVALID_DESCRIPTOR){
 			if(errno == EAGAIN || errno == EWOULDBLOCK){
 				break;
 			}else{
@@ -149,7 +144,7 @@ std::vector<Socket> Socket::acceptAll(){
 
 Socket Socket::acceptSingle(){
 	int descriptor;
-	if((descriptor = ::accept(mDescriptor,NULL,NULL)) == INVALID_SOCKET){
+	if((descriptor = ::accept(mDescriptor,NULL,NULL)) == INVALID_DESCRIPTOR){
 		THROW_EXCEPTION(NetworkException,strerror(errno));
 	}
 	return Socket(descriptor);

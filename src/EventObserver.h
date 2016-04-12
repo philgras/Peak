@@ -8,63 +8,65 @@
 #ifndef SRC_EVENTOBSERVER_H_
 #define SRC_EVENTOBSERVER_H_
 
-#include "Connection.h"
-#include "Common.h"
-#include "Event.h"
-#include "EventException.h"
-#include <vector>
-#include <cassert>
+
+#include "DynamicArray.h"
+#include "FileDescriptor.h"
+#include "TerminationDescriptor.h"
+#include "Observable.h"
 #include <sys/epoll.h>
 
 namespace Peak {
 
+
+class EPollDescriptor : public FileDescriptor{
+
+public:
+
+	EPollDescriptor()
+	:FileDescriptor(){}
+
+	~EPollDescriptor() = default;
+
+	void acquire();
+
+	DISALLOW_COPY_AND_ASSIGN(EPollDescriptor);
+
+};
+
+
+//TODO: for windows and bsd --> template<typename EventDescriptorType, typename ObservationStrategy>
 class EventObserver {
 public:
 
-    typedef int EventDescriptor;
+    typedef struct epoll_event Event;
 
-    static constexpr int INVALID_DESCRIPTOR;
+    static constexpr int INFINITE_TIMEOUT = -1;
 
-    EventObserver();
-    ~EventObserver(){
-        close();
+    EventObserver()
+    :mEpollDescriptor(),mTerminationDescriptor(){}
+
+    ~EventObserver() = default;
+
+    void start(){
+    	mEpollDescriptor.acquire();
+    	mTerminationDescriptor.acquire();
+    	addObservable(mTerminationDescriptor);
+    }
+    void stop(){
+    	mTerminationDescriptor.writeTerminationEvent();
+    	mEpollDescriptor.close();
     }
 
+    void addObservable(Observable&);
+    void removeObservable(Observable&);
 
+    size_t observeForEvents(DynamicArray<Event>& events  ,int timeout = INFINITE_TIMEOUT);
 
-    void observeConnection(Connection* connection){
-
-        struct epoll_event event;
-        int rc = 0;
-
-        event.data.ptr = connection;
-        event.events = EPOLLIN | EPOLLOUT | EPOLLET;
-
-        rc = ::epoll_ctl(mEventDescriptor, EPOLL_CTL_ADD,
-                  connection->getSocket().getSocketDescriptor(), &event);
-
-        if(rc == -1){
-            THROW_EXCEPTION(EventException, strerror(errno));
-        }
-
-    }
-
-    void waitForEvents(){
-
-
-
-    }
-
-    void close(){
-        if(mEventDescriptor != INVALID_DESCRIPTOR){
-            ::close(mEventDescriptor);
-            mEventDescriptor = INVALID_DESCRIPTOR;
-        }
-    }
 
 private:
 
-    EventDescriptor mEventDescriptor;
+    EPollDescriptor mEpollDescriptor;
+    TerminationDescriptor mTerminationDescriptor;
 
 };
 

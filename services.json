@@ -1,16 +1,19 @@
 [	
 	{
 		"name" : "Admin Tool",
-		"description" : "Administration Tool for an httpXS Server",
-		"rootpath" : "/home/philip/",
+		"description" : "Administration Tool for the Peak Server",
+		"directory-path" : "/home/philip/",
+  "url-pattern" : "/admin",
 		"port" : "8080",
-		"active" : true,
-		"modules" : [
-									{ "name" : "service_mod",
-									  "restrictions" : [256]
-									}
-								]
+		"active" : true
+	},
+ {
+		"name" : "Test Service",
+		"description" : "A simple test service",
+		"directory-path" : "/home/philip/",
+  "url-pattern" : "/test",
+		"port" : "8090",
+		"active" : true
 	}
-
 ] 
 

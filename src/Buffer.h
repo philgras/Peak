@@ -8,9 +8,10 @@
 #ifndef SRC_BUFFER_H_
 #define SRC_BUFFER_H_
 
+#include "DynamicArray.h"
 #include <cassert>
 #include <cstddef>
-#include <vector>
+
 
 
 namespace Peak {
@@ -18,8 +19,8 @@ namespace Peak {
 class Buffer {
 public:
     typedef unsigned char byte;
-	typedef std::vector<byte>::iterator iterator;
-	typedef std::vector<byte>::const_iterator const_iterator;
+	typedef DynamicArray<byte>::iterator iterator;
+	typedef DynamicArray<byte>::const_iterator const_iterator;
 
 	Buffer()
 	:mBuffer(),mReadingPosition(mBuffer.cbegin()),mEndOfData(mBuffer.begin()){
@@ -31,6 +32,9 @@ public:
 	 mEndOfData(buf.mEndOfData){
 
 	}
+
+	Buffer(const Buffer& buf)
+	:mBuffer(buf.mBuffer),mReadingPosition(buf.mReadingPosition),mEndOfData(buf.mEndOfData){}
 
 	~Buffer(){}
 
@@ -100,7 +104,7 @@ public:
 private:
 
 
-	std::vector<byte> mBuffer;
+	DynamicArray<byte> mBuffer;
 	const_iterator mReadingPosition;
 	iterator mEndOfData;
 

@@ -33,13 +33,12 @@ public:
 	:mArray(nullptr),mSize(0){}
 
 	explicit DynamicArray(size_type size)
-	:mSize(size),mArray(new T[mSize]){
-
-	}
+	:mArray(size == 0 ? nullptr : new T[size]),mSize(size){}
 
 	DynamicArray(const DynamicArray<T>& array)
 	:DynamicArray(array.mSize){
-		std::copy_n(array.mArray,mSize,mArray);
+		if(mArray != nullptr)
+			std::copy_n(array.mArray,mSize,mArray);
 	}
 
 	DynamicArray(DynamicArray<T>&& array)
@@ -58,7 +57,11 @@ public:
 		swap(array);
 	}
 
-	virtual ~DynamicArray(){}
+	virtual ~DynamicArray(){
+		if(mArray != nullptr)
+			delete [] mArray;
+
+	}
 
 	iterator begin(){
 		return mArray;
@@ -99,10 +102,15 @@ public:
 
 	void resize(size_type size){
 		if(size != mSize){
-			pointer newArray = new T[size];
-			std::copy_n(mArray, size > mSize ? size : mSize, newArray);
-			delete[] mArray;
+			pointer newArray = size == 0 ? nullptr : new T[size];
+			if(mArray != nullptr){
+				if(newArray != nullptr){
+					std::copy_n(mArray, size < mSize ? size : mSize, newArray);
+				}
+				delete [] mArray;
+			}
 			mArray = newArray;
+			mSize = size;
 		}
 	}
 
@@ -111,12 +119,13 @@ public:
 	}
 
 
-	const_pointer getStorage()const{
+	const_pointer getConstStorage()const{
 		return mArray;
 	}
 
 
 private:
+
 
 	pointer mArray;
 	size_type mSize;
